@@ -19,6 +19,16 @@ function createStore(initialStore = []) {
     });
   }
 
+  function removeTemplate(index) {
+    const newState = state.filter((_, i) => i !== index);
+    setState(newState);
+  }
+
+  function editTemplate(index, updatedTemplate) {
+    const newState = state.map((item, i) => i === index ? updatedTemplate : item);
+    setState(newState);
+  }
+
   function addTemplate(newTemplate) {
     // Insertar este nuevo elemento en el array state
     //  ... => Spread operator, que nos permite copiar el contenido de un array
@@ -44,6 +54,8 @@ function createStore(initialStore = []) {
     addTemplate,
     setState,
     suscribe,
+    removeTemplate,
+    editTemplate
   };
 }
 

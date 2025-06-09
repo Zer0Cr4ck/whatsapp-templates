@@ -11,48 +11,81 @@ let plantillas = [];
    2. Crear la instancia => new Template(tituloDOM, mensajeDOM, hasDOM)
    3. Lo inserto a mi arreglo plantillas.
 */
+// Sirve para saber si estoy editando o no
+let editIndex = null;
 
 const btnSave = document.querySelector("#save-template-btn");
+
 btnSave.addEventListener("click", function () {
-  // 💚  Capturar los elementos e insertarlos a mi arreglo
-  const inputTitle = document.querySelector("#template-title");
-  const inputHashtag = document.querySelector("#template-hashtag");
-  const inputMessage = document.querySelector("#template-message");
+   // 💚  Capturar los elements e insertarlos a mi arreglo
+   const inputTitle = document.querySelector("#template-title");
+   const inputHashtag = document.querySelector("#template-hashtag");
+   const inputMessage = document.querySelector("#template-message");
 
-  const titleValue = inputTitle.value.trim();
-  const hashtagValue = inputHashtag.value.trim();
-  const messageValue = inputMessage.value.trim();
+   const newTemplate = new Template(inputTitle.value.trim(),
+      inputMessage.value.trim(),
+      inputHashtag.value.trim());
 
-  const newTemplate = new Template(titleValue, messageValue, hashtagValue);
-  window.templateStore.addTemplate(newTemplate);
 
-  inputTitle.value = "";
-  inputHashtag.value = "";
-  inputMessage.value = "";
+   if (editIndex !== null) {
+      window.templateStore.editTemplate(editIndex, newTemplate);
+      editIndex = null;
+      btnSave.innerHTML = '<i class="fas fa-save"></i><span>Guardar Plantilla</span>';
+   } else {
+      window.templateStore.addTemplate(newTemplate);
+   }
+   // eliminamos el llamado a esta funcion porque ahora es parte de nuestro listener
+   //   renderizarUI();
+   // Limpieza de los selectores
+   inputTitle.value = "";
+   inputHashtag.value = "";
+   inputMessage.value = "";
 });
 
 function eliminarPlantilla(index) {
-  plantillas = plantillas.filter((elmt, i) => i !== index);
+   Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Esta acción eliminará la plantilla de forma permanente.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+   }).then((result) => {
+      if (result.isConfirmed) {
+         window.templateStore.removeTemplate(index);
+         Swal.fire('Eliminado', 'La plantilla ha sido eliminada.', 'success');
+      }
+      // Si cancela, no hace nada
+   });
+}
 
-  // Volver a renderizar
-  renderizarUI();
+function cargarEdicion(index) {
+  const state = window.templateStore.getState();
+  const plantilla = state[index];
+  document.querySelector("#template-title").value = plantilla.titulo;
+  document.querySelector("#template-hashtag").value = plantilla.hashtag;
+  document.querySelector("#template-message").value = plantilla.mensaje;
+  editIndex = index;
+  btnSave.innerHTML = '<i class="fas fa-edit"></i><span>Actualizar Plantilla</span>';
 }
 
 function renderizarUI(state) {
-  console.log("renderUI");
-  // 💚 Renderizar el arreglo dentro de mi contenedor div
-  const containerTemplate = document.querySelector("#templates-container");
-  // Limpiar el contenedor
-  containerTemplate.innerHTML = "";
-  // Vamos a renderizarlo
-  state.forEach((elmt, index) => {
-    containerTemplate.innerHTML += `
+   console.log("renderUI");
+   // 💚 Renderizar el arreglo dentro de mi contenedor div
+   const containerTemplate = document.querySelector("#templates-container");
+   // Limpiar el contenedor
+   containerTemplate.innerHTML = "";
+   // Vamos a renderizarlo
+   state.forEach((elmt, index) => {
+      containerTemplate.innerHTML += `
          <div class="bg-gray-50 rounded-lg p-6 border border-gray-200 hover:border-purple-300 transition duration-300 hover:shadow-md">
                <div class="flex flex-col lg:flex-row lg:items-start gap-4">
                   <div class="flex-1">
                         <div class="flex items-start justify-between mb-3">
                            <div>
-                              <h3 class="text-lg font-semibold text-gray-800 mb-1">${elmt.titulo} - ${index}</h3>
+                              <h3 class="text-lg font-semibold text-gray-800 mb-1">${elmt.titulo} - ${index+1}</h3>
                               <div class="flex gap-2 mb-2">
                                     <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">${elmt.hashtag}</span>
                               </div>
@@ -74,7 +107,7 @@ function renderizarUI(state) {
                            <i class="fas fa-copy"></i>
                            <span class="hidden sm:inline">Copiar</span>
                         </button>
-                        <button class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300 flex items-center gap-2 text-sm">
+                        <button onclick="cargarEdicion(${index})" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300 flex items-center gap-2 text-sm">
                            <i class="fas fa-edit"></i>
                            <span class="hidden sm:inline">Editar</span>
                         </button>
@@ -86,7 +119,10 @@ function renderizarUI(state) {
                </div>
          </div>
       `;
-  });
+   });
+   // Actualizacion de la estadistica
+   const totalTemplates = document.querySelector("#total-templates")
+   totalTemplates.textContent = state.length
 }
 
 window.templateStore.suscribe(renderizarUI);
