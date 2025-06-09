@@ -1,1 +1,1 @@
-# whatsapp-templates
+# Whatsapp-templates
